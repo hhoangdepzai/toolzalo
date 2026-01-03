@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Tool Quản Lý Zalo HoàngMMO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root{
+  --green:#16a34a; --green-bg:rgba(22,163,74,.15);
+  --red:#dc2626; --red-bg:rgba(220,38,38,.15);
+  --blue:#2563eb; --blue-dark:#1e40af;
+  --bg:#020617; --card:#0b1220; --card2:#0f172a;
+  --text:#e5e7eb;
+}
+*{box-sizing:border-box;font-family:Inter,Arial}
+body{margin:0;background:radial-gradient(circle,#0f172a,#020617);color:var(--text)}
+.hidden{display:none}
+
+header{
+  background:linear-gradient(90deg,var(--blue-dark),var(--blue));
+  padding:18px;font-size:22px;font-weight:700;text-align:center
+}
+.container{max-width:1300px;margin:auto;padding:16px}
+.card{
+  background:linear-gradient(180deg,var(--card),var(--card2));
+  padding:16px;border-radius:14px;margin-bottom:16px;
+  border:1px solid #1f2937
+}
+h3{margin:0 0 12px;color:#bfdbfe}
+input,select,textarea,button{
+  width:100%;padding:12px;border-radius:12px;
+  background:#020617;color:var(--text);
+  border:1px solid #1f2937;margin-bottom:10px
+}
+button{
+  background:linear-gradient(135deg,var(--blue),var(--blue-dark));
+  border:none;font-weight:700;cursor:pointer
+}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:10px;border-bottom:1px solid #1f2937}
+th{color:#93c5fd}
+.tag{padding:6px 14px;border-radius:999px;font-weight:700;font-size:12px}
+.can-sell{background:var(--green-bg);color:var(--green)}
+.not-ready{background:var(--red-bg);color:var(--red)}
+/* ===== TABLE RESPONSIVE FIX ===== */
+.table-scroll{
+  width:100%;
+  overflow-x:auto;
+}
+
+table{
+  min-width:1100px;
+  white-space:nowrap;
+}
+
+td, th{
+  text-align:center;
+  vertical-align:middle;
+}
+
+.tag{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:120px;
+  text-align:center;
+}
+
+/* MOBILE */
+@media (max-width: 900px){
+  table{
+    font-size:13px;
+  }
+  .tag{
+    min-width:100px;
+    font-size:11px;
+    padding:5px 10px;
+  }
+}
+/* ===== CỘT HÀNH ĐỘNG XẾP DỌC ===== */
+.action-col{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.action-col button{
+  width: 100%;
+  padding: 8px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+#pagination{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap; /* QUAN TRỌNG: không xuống dòng */
+}
+
+#pagination button{
+  min-width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: none;
+  background: #020617;
+  color: #e5e7eb;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#pagination button:hover{
+  background: #1e40af;
+}
+
+#pagination button.active{
+  background: #2563eb;
+  color: white;
+}
+
+</style>
+</head>
+
+<body>
+<header>🔐 TOOL QUẢN LÝ TÀI KHOẢN ZALO HOÀNGMMO</header>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div class="card" id="loginBox">
+  <h3>Đăng nhập Admin</h3>
+  <input id="user" placeholder="Admin user">
+  <input id="pass" type="password" placeholder="Admin password">
+  <button onclick="login()">Đăng nhập</button>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+
+<!-- DASH -->
+<div class="card">
+  <div class="row">
+    <div><h3>📦 Tổng acc</h3><b id="total">0</b></div>
+    <div><h3>🟢 Có thể bán</h3><b id="sellable">0</b></div>
+    <div><h3>🔴 Chưa đủ ngày</h3><b id="pending">0</b></div>
+  </div>
+</div>
+
+<!-- ADD -->
+<div class="card">
+<h3>➕ Thêm tài khoản</h3>
+<div class="row">
+  <input id="zalo" placeholder="Số Zalo" inputmode="numeric" oninput="onlyNumber(this)">
+  <input id="password" placeholder="Mật khẩu">
+  <select id="type">
+  <option>Reg</option>
+  <option>Tuần</option>
+  <option>Tháng</option>
+  <option>Năm</option>
+</select>
+
+<select id="goodsType">
+  <option value="clean">Hàng sạch</option>
+  <option value="bad">Hàng báo xấu</option>
+</select>
+
+  </select>
+  <select id="accStatus">
+  <option value="normal">Acc bình thường</option>
+  <option value="limited">Acc hạn chế</option>
+</select>
+  <input type="date" id="created">
+</div>
+<textarea id="note" placeholder="Ghi chú"></textarea>
+<button id="submitBtn" onclick="addAcc()">➕ Thêm</button>
+</div>
+
+<!-- FILTER -->
+<div class="card">
+<div class="row">
+  <input id="search" placeholder="🔍 Tìm số" oninput="render()">
+  <select id="filter" onchange="render()">
+    <option value="all">Tất cả</option>
+    <option value="can-sell">Có thể bán</option>
+    <option value="not-ready">Chưa đủ 7 ngày</option>
+  </select>
+</div>
+</div>
+
+
+<!-- TABLE -->
+<div class="card table-wrap">
+  <div class="table-scroll">
+    <table> 
+<tr>
+  <th></th>
+  <th>Số</th>
+  <th>Loại</th>
+  <th>Ngày tạo</th>
+  <th>Ngày đủ 7</th>
+  <th>Loại hàng</th>
+  <th>Trạng thái</th>
+  <th>Ghi chú</th>
+  <th>Bán</th>
+  <th>Hành động</th>
+  <th>Trạng thái acc</th>
+
+</tr>
+</thead>
+<tbody id="list"></tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="pagination" style="text-align:center;margin-top:15px;"></div>
+
+<script>
+const ADMIN_USER='admin';
+const ADMIN_PASS='123456';
+
+let accs=JSON.parse(localStorage.getItem('zaloAccs')||'[]');
+let editingIndex = null;
+let currentPage = 1;
+const perPage = 10;
+function login(){
+  if(user.value===ADMIN_USER && pass.value===ADMIN_PASS){
+    loginBox.classList.add('hidden');
+    app.classList.remove('hidden');
+    render();
+  } else alert('Sai tài khoản');
+}
+
+function status(acc){
+  const days=(new Date()-new Date(acc.created))/86400000;
+  return days>=7?'can-sell':'not-ready';
+}
+
+function addAcc(){
+  if(!zalo.value || !created.value)
+    return alert('Thiếu dữ liệu');
+
+  const sell = new Date(created.value);
+  sell.setDate(sell.getDate()+7);
+
+  if(editingIndex === null){
+    // ➕ THÊM MỚI
+    accs.push({
+      zalo: zalo.value,
+      pass: password.value,
+      type: type.value,
+      goodsType: goodsType.value,
+      created: created.value,
+      sell: sell.toISOString().slice(0,10),
+      note: note.value,
+      saleStatus: 'unsold',
+      accStatus: accStatus.value
+    });
+  }else{
+    // ✏️ CHỈNH SỬA
+    accs[editingIndex] = {
+      ...accs[editingIndex],
+      zalo: zalo.value,
+      pass: password.value,
+      type: type.value,
+      goodsType: goodsType.value,
+      created: created.value,
+      sell: sell.toISOString().slice(0,10),
+      note: note.value,
+      accStatus: accStatus.value
+    };
+
+    editingIndex = null;
+    document.getElementById('submitBtn').innerText = '➕ Thêm';
+
+  }
+
+  localStorage.setItem('zaloAccs', JSON.stringify(accs));
+  render();
+
+  zalo.value = password.value = note.value = '';
+}
+
+function render(){
+  list.innerHTML = '';
+
+  let t = accs.length;
+  let s = 0;
+  let p = 0;
+
+  accs.forEach(a=>{
+    if(status(a)==='can-sell') s++;
+    else p++;
+  });
+
+  let filtered = accs.filter(a=>{
+    if(search.value && !a.zalo.includes(search.value)) return false;
+    if(filter.value!=='all' && filter.value!==status(a)) return false;
+    return true;
+  });
+
+  const start = (currentPage-1)*perPage;
+  const pageData = filtered.slice(start,start+perPage);
+
+  pageData.forEach(a=>{
+    const i = accs.indexOf(a);
+    const st = status(a);
+
+    list.innerHTML += `
+    <tr>
+      <td></td>
+      <td>${a.zalo}</td>
+      <td>${a.type}</td>
+      <td>${formatDateVN(a.created)}</td>
+      <td>${formatDateVN(a.sell)}</td>
+      <td>${a.goodsType==='bad'
+        ?'<span class="tag not-ready">🚫 Hàng báo xấu</span>'
+        :'<span class="tag can-sell">✅ Hàng sạch</span>'}</td>
+      <td>${a.accStatus==='limited'
+        ?'<span class="tag not-ready">⚠️ Acc hạn chế</span>'
+        :'<span class="tag can-sell">✅ Acc bình thường</span>'}</td>
+      <td>${a.note||''}</td>
+      <td><span class="tag ${st}">
+        ${st==='can-sell'?'Có thể bán':'Chưa đủ 7 ngày'}
+      </span></td>
+      <td>${a.saleStatus==='sold'?'✅ ĐÃ BÁN':'⏳ CHƯA BÁN'}</td>
+      <td>
+        <div class="action-col">
+          <button onclick="editAcc(${i})">✏️ Sửa</button>
+          ${a.saleStatus==='sold'
+            ?`<button onclick="markUnsold(${i})">↩️ Hoàn</button>`
+            :`<button onclick="markSold(${i})">✔️ Bán</button>`}
+          <button onclick="del(${i})">🗑️ Xóa</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  total.innerText = t;
+  sellable.innerText = s;
+  pending.innerText = p;
+
+  renderPagination(filtered.length);
+}
+
+
+function markSold(i){
+  if(!confirm('Xác nhận ĐÃ BÁN?')) return;
+  accs[i].saleStatus='sold';
+  localStorage.setItem('zaloAccs',JSON.stringify(accs));
+  render();
+}
+
+function markUnsold(i){
+  if(!confirm('Hoàn về CHƯA BÁN?')) return;
+  accs[i].saleStatus='unsold';
+  localStorage.setItem('zaloAccs',JSON.stringify(accs));
+  render();
+}
+
+function del(i){
+  if(confirm('Xóa acc?')){
+    accs.splice(i,1);
+    localStorage.setItem('zaloAccs',JSON.stringify(accs));
+    render();
+  }
+}
+
+function onlyNumber(el){
+  el.value=el.value.replace(/\D/g,'');
+}
+function formatDateVN(dateStr){
+  if(!dateStr) return '';
+  const [y,m,d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+function editAcc(i){
+  const a = accs[i];
+  editingIndex = i;
+
+  // Đổ dữ liệu lên form
+  zalo.value = a.zalo;
+  password.value = a.pass;
+  type.value = a.type;
+  created.value = a.created;
+  note.value = a.note || '';
+  accStatus.value = a.accStatus || 'normal';
+  goodsType.value = a.goodsType || 'clean';
+
+  document.getElementById('submitBtn').innerText = '💾 Lưu chỉnh sửa';
+
+  // 🔽 TỰ ĐỘNG TRƯỢT LÊN FORM CHỈNH SỬA
+  const editCard = document.querySelector('input#zalo').closest('.card');
+  editCard.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+
+  // 🎯 TỰ ĐỘNG ĐẶT CON TRỎ VÀO Ô ZALO
+  setTimeout(() => {
+    zalo.focus();
+  }, 500);
+}
+function renderPagination(totalItems){
+  const totalPages = Math.ceil(totalItems / perPage);
+  let html = '';
+
+  if(currentPage > 1){
+    html += `<button onclick="goPage(${currentPage-1})">◀</button>`;
+  }
+
+  for(let p = 1; p <= totalPages; p++){
+    html += `
+      <button
+        class="${p === currentPage ? 'active' : ''}"
+        onclick="goPage(${p})">
+        ${p}
+      </button>`;
+  }
+
+  if(currentPage < totalPages){
+    html += `<button onclick="goPage(${currentPage+1})">▶</button>`;
+  }
+
+  pagination.innerHTML = html;
+}
+
+
+function goPage(p){
+  currentPage = p;
+  render();
+}
+
+</script>
+</body>
+</html>
